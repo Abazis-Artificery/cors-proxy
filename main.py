@@ -16,19 +16,21 @@ def root_handle_all():
     try:
         targetUrl = request.headers["Target-Url"]
         target_headers = {key:value for key, value in request.headers.items() if (key!="Target-Url") and (key!="Host")}
-        proxyRequest=requests.Request(
+    except KeyError:
+        return("Target-Url header missing.", 400)
+    googleResponse=requests.request(
             method=request.method, 
             url=targetUrl,
             headers=target_headers,
             data=request.data
         )
-    except KeyError:
-        return("Target-Url header missing.", 400)
-    response = requests.Session().send(proxyRequest.prepare())
+    proxyResponse=Response(
+        response=googleResponse.content,
+        status=googleResponse.status_code,
+        content_type=googleResponse.headers.get("Content-Type"),
+    )
     return( 
-        response.content,
-        response.status_code, 
-        response.headers
+        proxyResponse
     )
 
 #Serve our flask object
