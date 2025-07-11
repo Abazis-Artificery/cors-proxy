@@ -30,7 +30,6 @@ def root_handle_all():
                 googleResponse=requests.request(
                         method=data['method'], 
                         url=data['url'],
-                        params=data['params'] if 'params' in data else None,
                         data=base64.b64decode(data['data']) if 'data' in data else None,
                         headers = data['headers'] if 'headers' in data else None
                     )
@@ -39,12 +38,9 @@ def root_handle_all():
                     "status": googleResponse.status_code,
                     "headers": dict(googleResponse.headers),
                 }
-                json2=jsonify(responseData)
                 return(jsonify(responseData))
             except KeyError as e:
                 return(str(e), 400)
-            except Exception as e:
-                return(str(e), 500)
         case _:
               return("Success. Sorta.")
 #Serve our flask object
