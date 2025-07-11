@@ -21,7 +21,7 @@ def root_handle_all():
     googleResponse=requests.request(
             method=request.method, 
             url=targetUrl,
-            headers=target_headers,
+            #headers=target_headers,
             data=request.data
         )
     proxyResponse=Response(
@@ -29,7 +29,7 @@ def root_handle_all():
         status=googleResponse.status_code,
         content_type=googleResponse.headers.get("Content-Type"),
     )
-    return( 
+    return(
         proxyResponse
     )
 
