@@ -1,6 +1,16 @@
+# Originally created by Abazis Artificery LLC
+# MIT License. 
+# Hope it's as useful for you as it has been for me
+#   Simply parses out a http request that is arbitrarily json-ified an incoming POST's data field, and forwards it along.
+#   Then parses out the response to that http request, and passes it back in the original POST request's data, following another arbitary format. 
+
 import threading 
 import requests
-from flask import Flask, request, Response, abort
+import ast
+import base64
+import json
+
+from flask import Flask, request, Response, jsonify
 from flask_cors import CORS
 from waitress import serve
 
@@ -10,29 +20,33 @@ app = Flask(__name__)
 #Enable CORS support for our flask app object
 CORS(app)
 
-#Define what a "get" request to our flask object does
-@app.route("/")
+#Define what happens at our root route
+@app.route("/", methods=['POST'])
 def root_handle_all():
-    try:
-        targetUrl = request.headers["Target-Url"]
-        target_headers = {key:value for key, value in request.headers.items() if (key!="Target-Url") and (key!="Host")}
-    except KeyError:
-        return("Target-Url header missing.", 400)
-    googleResponse=requests.request(
-            method=request.method, 
-            url=targetUrl,
-            #headers=target_headers,
-            data=request.data
-        )
-    proxyResponse=Response(
-        response=googleResponse.content,
-        status=googleResponse.status_code,
-        content_type=googleResponse.headers.get("Content-Type"),
-    )
-    return(
-        proxyResponse
-    )
-
+    match request.method:
+        case 'POST':
+            try:
+                data = request.get_json()
+                googleResponse=requests.request(
+                        method=data['method'], 
+                        url=data['url'],
+                        params=data['params'] if 'params' in data else None,
+                        data=base64.b64decode(data['data']) if 'data' in data else None,
+                        headers = data['headers'] if 'headers' in data else None
+                    )
+                responseData={
+                    "data": base64.b64encode(googleResponse.content).decode(),
+                    "status": googleResponse.status_code,
+                    "headers": dict(googleResponse.headers),
+                }
+                json2=jsonify(responseData)
+                return(jsonify(responseData))
+            except KeyError as e:
+                return(str(e), 400)
+            except Exception as e:
+                return(str(e), 500)
+        case _:
+              return("Success. Sorta.")
 #Serve our flask object
 HOST = "0.0.0.0"
 PORT = "8080"
